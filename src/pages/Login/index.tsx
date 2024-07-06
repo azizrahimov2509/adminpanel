@@ -1,7 +1,10 @@
 import React, { useState, FormEvent, ChangeEvent } from "react";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../../farebase/config";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { Form, Input, Button, Row, Col, Typography, Alert } from "antd";
+
+const { Title } = Typography;
 
 const Login: React.FC = () => {
   const [loginData, setLoginData] = useState({ email: "", password: "" });
@@ -44,73 +47,100 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-base-200">
-      <form
-        className="w-[383px] h-[483px] max-w-md p-8 bg-base-100 rounded-lg shadow-lg border border-gray-300"
-        onSubmit={handleLogin}
+    <Row style={{ minHeight: "100vh", backgroundColor: "#001f3f" }}>
+      <Col
+        span={12}
+        style={{
+          backgroundColor: "#001f3f",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          padding: "48px",
+          color: "#fff",
+        }}
       >
-        <h2 className="text-3xl font-bold mb-6 text-center">Login</h2>
-        <div className="form-control mb-4">
-          <label className="label" htmlFor="email">
-            <span className="label-text">Email</span>
-          </label>
-          <input
-            id="email"
-            type="email"
-            placeholder="Enter your email..."
-            className="input input-bordered w-full"
-            value={loginData.email}
-            onChange={handleChange}
-            required
-          />
-        </div>
-
-        <div className="form-control mb-4">
-          <label className="label" htmlFor="password">
-            <span className="label-text">Password</span>
-          </label>
-          <input
-            id="password"
-            type="password"
-            placeholder="Enter your password..."
-            className="input input-bordered w-full"
-            value={loginData.password}
-            onChange={handleChange}
-            required
-          />
-        </div>
-
-        {error && <div className="text-red-500 text-sm mb-4">{error}</div>}
-
-        <div className="form-control">
-          <button
-            type="submit"
-            className="btn btn-primary w-full bg-[#057AFF] mb-6"
+        <div
+          style={{
+            maxWidth: "400px",
+            width: "100%",
+            padding: "24px",
+            backgroundColor: "#001529",
+            borderRadius: "8px",
+            boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
+            border: "1px solid #d9d9d9",
+            color: "#fff",
+          }}
+        >
+          <Title level={2} style={{ textAlign: "center", color: "#fff" }}>
+            Admin Panel
+          </Title>
+          <Form
+            name="login"
+            initialValues={{ remember: true }}
+            onSubmitCapture={handleLogin}
           >
-            LOGIN
-          </button>
-        </div>
+            <div className="flex items-center justify-center ">
+              <div className=" flex flex-col items-end justify-center">
+                <Form.Item
+                  label={<span style={{ color: "#fff" }}>Email</span>}
+                  name="email"
+                  rules={[
+                    { required: true, message: "Please input your email!" },
+                  ]}
+                >
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="Enter your email..."
+                    value={loginData.email}
+                    onChange={handleChange}
+                    className="w-52"
+                  />
+                </Form.Item>
 
-        <div className="form-control">
-          <button
-            type="button"
-            className="btn btn-primary w-full bg-[#463AA1]"
-            onClick={() => navigate("/guest")}
-          >
-            GUEST USER
-          </button>
-        </div>
+                <Form.Item
+                  label={<span style={{ color: "#fff" }}>Password</span>}
+                  name="password"
+                  rules={[
+                    { required: true, message: "Please input your password!" },
+                  ]}
+                >
+                  <Input.Password
+                    id="password"
+                    placeholder="Enter your password..."
+                    value={loginData.password}
+                    onChange={handleChange}
+                    className="w-52"
+                  />
+                </Form.Item>
+              </div>
+            </div>
 
-        <div className="text-center mt-4">
-          <p className="text-sm">
-            Not a member yet?
-            <Link to="/signUp" className="link link-primary ml-1">
-              Register
-            </Link>
-          </p>
+            {error && (
+              <Alert
+                message={error}
+                type="error"
+                showIcon
+                style={{ marginBottom: "16px" }}
+              />
+            )}
+
+            <Form.Item>
+              <Button type="primary" htmlType="submit" block>
+                LOGIN
+              </Button>
+            </Form.Item>
+          </Form>
         </div>
-      </form>
-    </div>
+      </Col>
+      <Col
+        span={12}
+        style={{
+          background: `url('../../../public/Wall-Panels-9.jpg') no-repeat center center`,
+          backgroundSize: "cover",
+        }}
+      />
+    </Row>
   );
 };
 

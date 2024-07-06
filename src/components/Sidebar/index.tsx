@@ -1,4 +1,5 @@
 import { AppstoreOutlined, CalendarOutlined } from "@ant-design/icons";
+
 import { Menu, ConfigProvider } from "antd";
 import type { GetProp, MenuProps } from "antd";
 import { NavLink, useLocation } from "react-router-dom";
@@ -29,11 +30,15 @@ const items: MenuItem[] = [
       </NavLink>
     ),
   },
-  //   {
-  //     key: "sub1",
-  //     icon: <MailOutlined />,
-  //     label: <NavLink to="/dashboard">Dashboard</NavLink>,
-  //   },
+  // {
+  //   key: "sub1",
+  //   icon: <RocketOutlined style={{ zoom: 1.7 }} />,
+  //   label: (
+  //     <NavLink className="text-2xl" to="/logout">
+  //       Logout
+  //     </NavLink>
+  //   ),
+  // },
   //   {
   //     key: "sub2",
   //     icon: <SettingOutlined />,

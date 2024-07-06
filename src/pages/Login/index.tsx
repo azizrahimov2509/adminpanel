@@ -61,7 +61,7 @@ const Login: React.FC = () => {
       >
         <div
           style={{
-            maxWidth: "400px",
+            maxWidth: "500px",
             width: "100%",
             padding: "24px",
             backgroundColor: "#001529",

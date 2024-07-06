@@ -136,7 +136,7 @@ const Login: React.FC = () => {
       <Col
         span={12}
         style={{
-          background: `url('../../../src/assets/Wall-Panels-9.jpg') no-repeat center center`,
+          background: `url('../../public/IMG_7006.jpg') no-repeat center center`,
           backgroundSize: "cover",
         }}
       />

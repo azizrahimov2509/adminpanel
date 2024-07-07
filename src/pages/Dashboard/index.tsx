@@ -20,18 +20,21 @@ const recentActivities = [
     title: "User JaneDoe updated her profile",
     description: "5 hours ago",
   },
-  // Add more activities here
+  {
+    title: "User Alice updated her profile",
+    description: "5 hours ago",
+  },
 ];
 
 export default function Dashboard() {
   return (
-    <div className="p-4">
+    <div className="p-4 text-white">
       <h2 className="mb-4">Dashboard</h2>
       <Row gutter={16}>
         <Col span={8}>
           <Card>
             <Statistic
-              title="Active Users"
+              title={<span className="text-black text-lg">Active Users</span>}
               value={1128}
               valueStyle={{ color: "#3f8600" }}
               prefix={<ArrowUpOutlined />}
@@ -42,7 +45,7 @@ export default function Dashboard() {
         <Col span={8}>
           <Card>
             <Statistic
-              title="New Orders"
+              title={<span className="text-black text-lg">New Orders</span>}
               value={93}
               valueStyle={{ color: "#cf1322" }}
               prefix={<ArrowDownOutlined />}
@@ -53,7 +56,7 @@ export default function Dashboard() {
         <Col span={8}>
           <Card>
             <Statistic
-              title="Revenue"
+              title={<span className="text-black text-lg">Revenue</span>}
               value={112893}
               precision={2}
               valueStyle={{ color: "#3f8600" }}
@@ -71,8 +74,12 @@ export default function Dashboard() {
             <List.Item>
               <List.Item.Meta
                 avatar={<Avatar icon={<ArrowUpOutlined />} />}
-                title={item.title}
-                description={item.description}
+                title={
+                  <span className="text-green-500 text-lg">{item.title}</span>
+                }
+                description={
+                  <span className="text-white">{item.description}</span>
+                }
               />
             </List.Item>
           )}
@@ -81,13 +88,25 @@ export default function Dashboard() {
       <div className="mt-4">
         <h3>Quick Actions</h3>
         <Space>
-          <Button type="primary" icon={<UserAddOutlined />}>
+          <Button
+            type="primary"
+            className="text-white"
+            icon={<UserAddOutlined />}
+          >
             Add User
           </Button>
-          <Button type="primary" icon={<ShoppingCartOutlined />}>
+          <Button
+            type="primary"
+            className="text-white"
+            icon={<ShoppingCartOutlined />}
+          >
             New Order
           </Button>
-          <Button type="primary" icon={<SettingOutlined />}>
+          <Button
+            type="primary"
+            className="text-white"
+            icon={<SettingOutlined />}
+          >
             Settings
           </Button>
         </Space>

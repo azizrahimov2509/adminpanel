@@ -31,7 +31,7 @@ export default function Sidebar() {
   const items: MenuItem[] = [
     {
       key: "title",
-      label: <h2 className="text-white text-center text-xl py-2">FN20</h2>,
+      label: <h2 className="text-white text-center text-xl py-2">SHOP.CO</h2>,
       disabled: true,
     },
     {

@@ -28,7 +28,7 @@ import { db } from "../../farebase/config";
 type Product = {
   key: string;
   name: string;
-  price: string;
+  price: number;
   category: string;
   color: string;
   gender: string;
@@ -39,23 +39,27 @@ type Product = {
 export default function Products() {
   const [products, setProducts] = useState<Product[]>([]);
   const [searchText, setSearchText] = useState<string>("");
-  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
   const [currentProduct, setCurrentProduct] = useState<Product | null>(null);
   const [form] = Form.useForm();
+  const [loading, setLoading] = useState(false);
+  const [tableLoading, setTableLoading] = useState(false);
 
   useEffect(() => {
     fetchProducts();
   }, []);
 
   const fetchProducts = async () => {
+    setTableLoading(true);
     const querySnapshot = await getDocs(collection(db, "products"));
     const productsData: Product[] = [];
     querySnapshot.forEach((doc) => {
       productsData.push({ key: doc.id, ...doc.data() } as Product);
     });
     setProducts(productsData);
-    saveProductsToLocal(productsData); // Save to LocalStorage
+    saveProductsToLocal(productsData);
+    setTableLoading(false);
   };
 
   const saveProductsToLocal = (products: Product[]) => {
@@ -74,8 +78,20 @@ export default function Products() {
   }, []);
 
   const handleDelete = async (key: string) => {
+    setLoading(true);
     await deleteDoc(doc(db, "products", key));
     fetchProducts();
+    setLoading(false);
+  };
+
+  const handleConfirmDelete = (key: string) => {
+    Modal.confirm({
+      title: "Are you sure you want to delete this product?",
+      okText: "Delete",
+      okType: "danger",
+      cancelText: "Cancel",
+      onOk: () => handleDelete(key),
+    });
   };
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -85,26 +101,28 @@ export default function Products() {
   const showAddModal = () => {
     setIsEdit(false);
     setCurrentProduct(null);
-    setIsModalVisible(true);
+    setIsModalOpen(true);
   };
 
   const showEditModal = (product: Product) => {
     setIsEdit(true);
     setCurrentProduct(product);
     form.setFieldsValue(product);
-    setIsModalVisible(true);
+    setIsModalOpen(true);
   };
 
   const handleSaveProduct = async () => {
     const values = await form.validateFields();
+    setLoading(true);
     if (isEdit && currentProduct) {
       await updateDoc(doc(db, "products", currentProduct.key), values);
     } else {
       await addDoc(collection(db, "products"), values);
     }
-    setIsModalVisible(false);
+    setIsModalOpen(false);
     form.resetFields();
     fetchProducts();
+    setLoading(false);
   };
 
   const columns: TableColumnType<Product>[] = [
@@ -120,6 +138,7 @@ export default function Products() {
       title: "Price",
       dataIndex: "price",
       key: "price",
+      render: (text: number) => `$${text}`,
     },
     {
       title: "Category",
@@ -160,7 +179,8 @@ export default function Products() {
           />
           <Button
             icon={<DeleteOutlined />}
-            onClick={() => handleDelete(record.key)}
+            onClick={() => handleConfirmDelete(record.key)}
+            loading={loading}
           />
         </Space>
       ),
@@ -178,17 +198,23 @@ export default function Products() {
           onChange={handleSearch}
           className="w-1/3"
         />
-        <Button type="primary" icon={<PlusOutlined />} onClick={showAddModal}>
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={showAddModal}
+          loading={loading}
+        >
           Add Product
         </Button>
       </div>
-      <Table columns={columns} dataSource={products} />
+      <Table columns={columns} dataSource={products} loading={tableLoading} />
 
       <Modal
         title={isEdit ? "Edit Product" : "Add Product"}
-        visible={isModalVisible}
+        open={isModalOpen}
         onOk={handleSaveProduct}
-        onCancel={() => setIsModalVisible(false)}
+        onCancel={() => setIsModalOpen(false)}
+        confirmLoading={loading}
       >
         <Form form={form} layout="vertical">
           <Form.Item
@@ -205,7 +231,11 @@ export default function Products() {
             label="Price"
             rules={[{ required: true, message: "Please input the price!" }]}
           >
-            <Input />
+            <Input
+              type="number"
+              prefix="$" // Добавляем $ как префикс
+              min={0}
+            />
           </Form.Item>
           <Form.Item
             name="category"

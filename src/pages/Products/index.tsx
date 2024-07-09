@@ -7,6 +7,7 @@ import {
   Form,
   Radio,
   TableColumnType,
+  Select,
 } from "antd";
 import {
   EditOutlined,
@@ -25,6 +26,8 @@ import {
 } from "firebase/firestore";
 import { db } from "../../farebase/config";
 
+const { Option } = Select;
+
 type Product = {
   key: string;
   name: string;
@@ -34,6 +37,7 @@ type Product = {
   gender: string;
   photo: string;
   description: string;
+  size: "small" | "medium" | "large" | "XL" | "2XL" | "3XL";
 };
 
 export default function Products() {
@@ -101,6 +105,7 @@ export default function Products() {
   const showAddModal = () => {
     setIsEdit(false);
     setCurrentProduct(null);
+    form.resetFields();
     setIsModalOpen(true);
   };
 
@@ -167,6 +172,14 @@ export default function Products() {
       title: "Description",
       dataIndex: "description",
       key: "description",
+    },
+    {
+      title: "Size",
+      dataIndex: "size",
+      key: "size",
+      render: (size: "small" | "medium" | "large" | "XL" | "2XL" | "3XL") => (
+        <span>{size}</span>
+      ),
     },
     {
       title: "Actions",
@@ -276,6 +289,20 @@ export default function Products() {
             ]}
           >
             <Input.TextArea />
+          </Form.Item>
+          <Form.Item
+            name="size"
+            label="Size"
+            rules={[{ required: true, message: "Please select the size!" }]}
+          >
+            <Select placeholder="Select a size">
+              <Option value="small">Small</Option>
+              <Option value="medium">Medium</Option>
+              <Option value="large">Large</Option>
+              <Option value="Xl">XL</Option>
+              <Option value="2Xl">2XL</Option>
+              <Option value="3Xl">3XL</Option>
+            </Select>
           </Form.Item>
         </Form>
       </Modal>

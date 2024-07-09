@@ -178,7 +178,7 @@ export default function Products() {
             onClick={() => showEditModal(record)}
           />
           <Button
-            icon={<DeleteOutlined />}
+            icon={<DeleteOutlined className="text-red-500" />}
             onClick={() => handleConfirmDelete(record.key)}
             loading={loading}
           />

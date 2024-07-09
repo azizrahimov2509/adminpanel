@@ -55,7 +55,23 @@ export default function Products() {
       productsData.push({ key: doc.id, ...doc.data() } as Product);
     });
     setProducts(productsData);
+    saveProductsToLocal(productsData); // Save to LocalStorage
   };
+
+  const saveProductsToLocal = (products: Product[]) => {
+    localStorage.setItem("products", JSON.stringify(products));
+  };
+
+  const loadProductsFromLocal = () => {
+    const storedProducts = localStorage.getItem("products");
+    if (storedProducts) {
+      setProducts(JSON.parse(storedProducts));
+    }
+  };
+
+  useEffect(() => {
+    loadProductsFromLocal();
+  }, []);
 
   const handleDelete = async (key: string) => {
     await deleteDoc(doc(db, "products", key));

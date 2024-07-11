@@ -1,32 +1,44 @@
-import { Card, Col, Row, Statistic, List, Avatar, Button, Space } from "antd";
-import {
-  ArrowUpOutlined,
-  ArrowDownOutlined,
-  UserAddOutlined,
-  ShoppingCartOutlined,
-  SettingOutlined,
-} from "@ant-design/icons";
+import { Card, Col, Row, Statistic } from "antd";
+import { ArrowUpOutlined, ArrowDownOutlined } from "@ant-design/icons";
+import { useEffect, useState } from "react";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "../../farebase/config";
 
-const recentActivities = [
-  {
-    title: "User JohnDoe created a new account",
-    description: "2 hours ago",
-  },
-  {
-    title: "Order #12345 has been shipped",
-    description: "3 hours ago",
-  },
-  {
-    title: "User JaneDoe updated her profile",
-    description: "5 hours ago",
-  },
-  {
-    title: "User Alice updated her profile",
-    description: "5 hours ago",
-  },
-];
+type Product = {
+  category: string;
+  count: number;
+};
 
 export default function Dashboard() {
+  const [productsByCategory, setProductsByCategory] = useState<
+    { category: string; count: number }[]
+  >([]);
+  const [newOrders] = useState(93);
+  const [revenue] = useState(112893);
+
+  useEffect(() => {
+    fetchProductCounts();
+  }, []);
+
+  const fetchProductCounts = async () => {
+    const querySnapshot = await getDocs(collection(db, "products"));
+    const categoryCounts: { [key: string]: number } = {};
+
+    querySnapshot.forEach((doc) => {
+      const data = doc.data() as Product;
+      if (data.category && data.count && data.count > 0) {
+        categoryCounts[data.category] =
+          (categoryCounts[data.category] || 0) + data.count;
+      }
+    });
+
+    const sortedProductsByCategory = Object.entries(categoryCounts)
+      .map(([category, count]) => ({ category, count }))
+      .sort((a, b) => a.category.localeCompare(b.category));
+
+    setProductsByCategory(sortedProductsByCategory);
+  };
+
   return (
     <div className="p-4 text-white">
       <h2 className="mb-4">Dashboard</h2>
@@ -46,7 +58,7 @@ export default function Dashboard() {
           <Card>
             <Statistic
               title={<span className="text-black text-lg">New Orders</span>}
-              value={93}
+              value={newOrders}
               valueStyle={{ color: "#cf1322" }}
               prefix={<ArrowDownOutlined />}
               suffix="%"
@@ -57,7 +69,7 @@ export default function Dashboard() {
           <Card>
             <Statistic
               title={<span className="text-black text-lg">Revenue</span>}
-              value={112893}
+              value={revenue}
               precision={2}
               valueStyle={{ color: "#3f8600" }}
               prefix="$"
@@ -66,50 +78,32 @@ export default function Dashboard() {
         </Col>
       </Row>
       <div className="mt-4">
-        <h3>Recent Activity</h3>
-        <List
-          itemLayout="horizontal"
-          dataSource={recentActivities}
-          renderItem={(item) => (
-            <List.Item>
-              <List.Item.Meta
-                avatar={<Avatar icon={<ArrowUpOutlined />} />}
-                title={
-                  <span className="text-green-500 text-lg">{item.title}</span>
-                }
-                description={
-                  <span className="text-white">{item.description}</span>
-                }
-              />
-            </List.Item>
+        <h3 className="mb-4">Product Count by Category</h3>
+        <Row gutter={16}>
+          {productsByCategory.length > 0 ? (
+            productsByCategory.map((item) => (
+              <Col span={8} key={item.category}>
+                <Card>
+                  <Statistic
+                    title={
+                      <span className="text-black text-lg">
+                        {item.category}
+                      </span>
+                    }
+                    value={item.count}
+                    valueStyle={{ color: "#1890ff" }}
+                  />
+                </Card>
+              </Col>
+            ))
+          ) : (
+            <Col span={24}>
+              <Card>
+                <p>No products available.</p>
+              </Card>
+            </Col>
           )}
-        />
-      </div>
-      <div className="mt-4">
-        <h3>Quick Actions</h3>
-        <Space>
-          <Button
-            type="primary"
-            className="text-white"
-            icon={<UserAddOutlined />}
-          >
-            Add User
-          </Button>
-          <Button
-            type="primary"
-            className="text-white"
-            icon={<ShoppingCartOutlined />}
-          >
-            New Order
-          </Button>
-          <Button
-            type="primary"
-            className="text-white"
-            icon={<SettingOutlined />}
-          >
-            Settings
-          </Button>
-        </Space>
+        </Row>
       </div>
     </div>
   );

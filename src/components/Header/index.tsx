@@ -4,7 +4,6 @@ import { useLocation } from "react-router-dom";
 
 export default function Header() {
   const location = useLocation();
-  console.log(location.pathname);
 
   return (
     <header className="bg-[#001529] h-[50px] text-white w-full flex items-center px-8">

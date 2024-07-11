@@ -6,8 +6,10 @@ import {
   Modal,
   Form,
   Radio,
-  TableColumnType,
   Select,
+  Upload,
+  TableColumnType,
+  message,
 } from "antd";
 import {
   EditOutlined,
@@ -24,7 +26,9 @@ import {
   deleteDoc,
   doc,
 } from "firebase/firestore";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db } from "../../farebase/config";
+import ImgCrop from "antd-img-crop";
 
 const { Option } = Select;
 
@@ -35,20 +39,23 @@ type Product = {
   category: string;
   color: string;
   gender: string;
-  photo: string;
+  photo: string[];
   description: string;
   size: "small" | "medium" | "large" | "XL" | "2XL" | "3XL";
+  count: number; // Новое поле для количества товаров
 };
 
 export default function Products() {
   const [products, setProducts] = useState<Product[]>([]);
   const [searchText, setSearchText] = useState<string>("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
   const [currentProduct, setCurrentProduct] = useState<Product | null>(null);
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [tableLoading, setTableLoading] = useState(false);
+  const [fileList, setFileList] = useState<any[]>([]);
 
   useEffect(() => {
     fetchProducts();
@@ -59,7 +66,12 @@ export default function Products() {
     const querySnapshot = await getDocs(collection(db, "products"));
     const productsData: Product[] = [];
     querySnapshot.forEach((doc) => {
-      productsData.push({ key: doc.id, ...doc.data() } as Product);
+      productsData.push({
+        key: doc.id,
+        ...doc.data(),
+        photo: doc.data().photo || [],
+        count: doc.data().count || 0, // Извлечение количества товаров
+      } as Product);
     });
     setProducts(productsData);
     saveProductsToLocal(productsData);
@@ -102,10 +114,15 @@ export default function Products() {
     setSearchText(e.target.value);
   };
 
+  const handleCategoryChange = (value: string) => {
+    setSelectedCategory(value);
+  };
+
   const showAddModal = () => {
     setIsEdit(false);
     setCurrentProduct(null);
     form.resetFields();
+    setFileList([]);
     setIsModalOpen(true);
   };
 
@@ -113,21 +130,73 @@ export default function Products() {
     setIsEdit(true);
     setCurrentProduct(product);
     form.setFieldsValue(product);
+    setFileList(
+      product.photo.map((url, index) => ({
+        uid: index.toString(),
+        name: `image${index}.png`,
+        status: "done",
+        url,
+      }))
+    );
     setIsModalOpen(true);
   };
 
+  const handleUpload = async (file: any) => {
+    const storage = getStorage();
+    const storageRef = ref(storage, `products/` + file.name);
+    await uploadBytes(storageRef, file);
+    return await getDownloadURL(storageRef);
+  };
+
   const handleSaveProduct = async () => {
-    const values = await form.validateFields();
-    setLoading(true);
-    if (isEdit && currentProduct) {
-      await updateDoc(doc(db, "products", currentProduct.key), values);
-    } else {
-      await addDoc(collection(db, "products"), values);
+    try {
+      const values = await form.validateFields();
+
+      setLoading(true);
+
+      let photoURLs = currentProduct ? currentProduct.photo : [];
+
+      if (fileList.length > 0) {
+        const uploadPromises = fileList
+          .filter((file) => !file.url && file.originFileObj)
+          .map((file) => handleUpload(file.originFileObj));
+        const uploadedPhotoURLs = await Promise.all(uploadPromises);
+        photoURLs = [...photoURLs, ...uploadedPhotoURLs];
+      }
+
+      const productData = { ...values, photo: photoURLs, count: values.count };
+
+      if (isEdit && currentProduct) {
+        await updateDoc(doc(db, "products", currentProduct.key), productData);
+      } else {
+        await addDoc(collection(db, "products"), productData);
+      }
+
+      setIsModalOpen(false);
+      form.resetFields();
+      setFileList([]);
+      fetchProducts();
+    } catch (error) {
+      console.error("Validation Failed:", error);
+    } finally {
+      setLoading(false);
     }
-    setIsModalOpen(false);
-    form.resetFields();
-    fetchProducts();
-    setLoading(false);
+  };
+
+  const uploadProps = {
+    onRemove: (file: any) => {
+      setFileList((prev) => prev.filter((item) => item.uid !== file.uid));
+    },
+    beforeUpload: (file: any) => {
+      const isImage = file.type.startsWith("image/");
+      if (!isImage) {
+        message.error(`${file.name} is not an image file.`);
+        return Upload.LIST_IGNORE;
+      }
+      setFileList((prev) => [...prev, file]);
+      return false;
+    },
+    fileList,
   };
 
   const columns: TableColumnType<Product>[] = [
@@ -149,6 +218,9 @@ export default function Products() {
       title: "Category",
       dataIndex: "category",
       key: "category",
+      render: (
+        category: "T-shirt" | "Jeans" | "Smoking" | "Jackets" | "Dress" | "Cap"
+      ) => <span>{category}</span>,
     },
     {
       title: "Color",
@@ -161,11 +233,32 @@ export default function Products() {
       key: "gender",
     },
     {
+      title: "Count",
+      dataIndex: "count",
+      key: "count",
+      render: (count: number) => <span>{count}</span>,
+    },
+    {
       title: "Photo",
       dataIndex: "photo",
       key: "photo",
-      render: (text: string) => (
-        <img src={text} alt="product" style={{ width: 50 }} />
+      render: (photos: string[]) => (
+        <div
+          style={{
+            display: "flex",
+            justifyContent: photos.length === 1 ? "center" : "flex-start",
+            gap: 8,
+          }}
+        >
+          {photos.map((photo, index) => (
+            <img
+              key={index}
+              src={photo}
+              alt="product"
+              style={{ width: 50, height: 50, objectFit: "contain" }}
+            />
+          ))}
+        </div>
       ),
     },
     {
@@ -200,17 +293,38 @@ export default function Products() {
     },
   ];
 
+  const filteredProducts = products.filter((product) => {
+    return (
+      (selectedCategory === "all" || product.category === selectedCategory) &&
+      product.name.toLowerCase().includes(searchText.toLowerCase())
+    );
+  });
+
   return (
     <div className="p-4 text-white">
       <h2 className="mb-4">Products</h2>
-      <div className="mb-4 flex justify-between items-center">
+      <div className="mb-4 flex flex-col md:flex-row justify-between items-center gap-4">
         <Input
           placeholder="Search products"
           prefix={<SearchOutlined />}
           value={searchText}
           onChange={handleSearch}
-          className="w-1/3"
+          className="w-full md:w-1/3"
         />
+        <Select
+          placeholder="Select a category"
+          className="w-full md:w-1/3"
+          onChange={handleCategoryChange}
+          value={selectedCategory}
+        >
+          <Option value="all">All</Option>
+          <Option value="t-shirt">T-shirt</Option>
+          <Option value="jeans">Jeans</Option>
+          <Option value="smoking">Smoking</Option>
+          <Option value="jackets">Jackets</Option>
+          <Option value="dress">Dress</Option>
+          <Option value="Cap">Cap</Option>
+        </Select>
         <Button
           type="primary"
           icon={<PlusOutlined />}
@@ -220,7 +334,11 @@ export default function Products() {
           Add Product
         </Button>
       </div>
-      <Table columns={columns} dataSource={products} loading={tableLoading} />
+      <Table
+        columns={columns}
+        dataSource={filteredProducts}
+        loading={tableLoading}
+      />
 
       <Modal
         title={isEdit ? "Edit Product" : "Add Product"}
@@ -244,25 +362,28 @@ export default function Products() {
             label="Price"
             rules={[{ required: true, message: "Please input the price!" }]}
           >
-            <Input
-              type="number"
-              prefix="$" // Добавляем $ как префикс
-              min={0}
-            />
+            <Input type="number" prefix="$" min={0} />
           </Form.Item>
           <Form.Item
             name="category"
             label="Category"
             rules={[{ required: true, message: "Please input the category!" }]}
           >
-            <Input />
+            <Select placeholder="Select a category">
+              <Option value="t-shirt">T-shirt</Option>
+              <Option value="jeans">Jeans</Option>
+              <Option value="smoking">Smoking</Option>
+              <Option value="jackets">Jackets</Option>
+              <Option value="dress">Dress</Option>
+              <Option value="Cap">Cap</Option>
+            </Select>
           </Form.Item>
           <Form.Item
             name="color"
             label="Color"
             rules={[{ required: true, message: "Please input the color!" }]}
           >
-            <Input />
+            <Input type="color" />
           </Form.Item>
           <Form.Item
             name="gender"
@@ -275,11 +396,38 @@ export default function Products() {
             </Radio.Group>
           </Form.Item>
           <Form.Item
-            name="photo"
-            label="Photo URL"
-            rules={[{ required: true, message: "Please input the photo URL!" }]}
+            name="count"
+            label="Count"
+            rules={[{ required: true, message: "Please input the count!" }]}
           >
-            <Input />
+            <Input type="number" min={0} />
+          </Form.Item>
+          <Form.Item name="photo" label="Photo">
+            <ImgCrop rotationSlider>
+              <Upload
+                {...uploadProps}
+                listType="picture-card"
+                onChange={({ fileList: newFileList }) =>
+                  setFileList(newFileList)
+                }
+                onPreview={async (file) => {
+                  let src = file.url as string;
+                  if (!src) {
+                    src = await new Promise((resolve) => {
+                      const reader = new FileReader();
+                      reader.readAsDataURL(file.originFileObj as File);
+                      reader.onload = () => resolve(reader.result as string);
+                    });
+                  }
+                  const image = new Image();
+                  image.src = src;
+                  const imgWindow = window.open(src);
+                  imgWindow?.document.write(image.outerHTML);
+                }}
+              >
+                {fileList.length < 5 && "+ Upload"}
+              </Upload>
+            </ImgCrop>
           </Form.Item>
           <Form.Item
             name="description"
@@ -299,9 +447,9 @@ export default function Products() {
               <Option value="small">Small</Option>
               <Option value="medium">Medium</Option>
               <Option value="large">Large</Option>
-              <Option value="Xl">XL</Option>
-              <Option value="2Xl">2XL</Option>
-              <Option value="3Xl">3XL</Option>
+              <Option value="XL">XL</Option>
+              <Option value="2XL">2XL</Option>
+              <Option value="3XL">3XL</Option>
             </Select>
           </Form.Item>
         </Form>

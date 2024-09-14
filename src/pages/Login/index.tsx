@@ -3,7 +3,7 @@ import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../../farebase/config";
 import { useNavigate } from "react-router-dom";
 import { Form, Input, Button, Row, Col, Typography, Alert } from "antd";
-import Img from "../../../public/Wall-Panels-9.jpg"; // Проверьте путь к изображению
+import Img from "../../../public/Wall-Panels-9.jpg";
 
 const { Title } = Typography;
 

@@ -42,7 +42,8 @@ type Product = {
   photo: string[];
   description: string;
   size: "small" | "medium" | "large" | "XL" | "2XL" | "3XL";
-  count: number; // Новое поле для количества товаров
+  count: number;
+  rating: number;
 };
 
 export default function Products() {
@@ -70,7 +71,7 @@ export default function Products() {
         key: doc.id,
         ...doc.data(),
         photo: doc.data().photo || [],
-        count: doc.data().count || 0, // Извлечение количества товаров
+        count: doc.data().count || 0,
       } as Product);
     });
     setProducts(productsData);
@@ -215,6 +216,12 @@ export default function Products() {
       render: (text: number) => `$${text}`,
     },
     {
+      title: "Rating",
+      dataIndex: "rating",
+      key: "rating",
+      render: (text: number) => `${text}`,
+    },
+    {
       title: "Category",
       dataIndex: "category",
       key: "category",
@@ -319,6 +326,7 @@ export default function Products() {
         >
           <Option value="all">All</Option>
           <Option value="t-shirt">T-shirt</Option>
+          <Option value="Shorts">Shorts</Option>
           <Option value="jeans">Jeans</Option>
           <Option value="smoking">Smoking</Option>
           <Option value="jackets">Jackets</Option>
@@ -365,12 +373,20 @@ export default function Products() {
             <Input type="number" prefix="$" min={0} />
           </Form.Item>
           <Form.Item
+            name="rating"
+            label="rating"
+            rules={[{ required: true, message: "Please input the price!" }]}
+          >
+            <Input type="number" min={0} />
+          </Form.Item>
+          <Form.Item
             name="category"
             label="Category"
             rules={[{ required: true, message: "Please input the category!" }]}
           >
             <Select placeholder="Select a category">
               <Option value="t-shirt">T-shirt</Option>
+              <Option value="shorts">Shorts</Option>
               <Option value="jeans">Jeans</Option>
               <Option value="smoking">Smoking</Option>
               <Option value="jackets">Jackets</Option>

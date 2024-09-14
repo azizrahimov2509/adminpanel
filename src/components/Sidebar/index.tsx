@@ -64,7 +64,7 @@ export default function Sidebar() {
     <>
       <ConfigProvider theme={{ components: { Menu: { itemHeight: 70 } } }}>
         <Menu
-          style={{ width: 350, height: "100vh" }}
+          style={{ width: 350, height: "155vh" }}
           defaultSelectedKeys={[location.pathname.slice(1)]}
           items={items}
           theme="dark"
